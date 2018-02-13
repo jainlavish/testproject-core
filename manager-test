@@ -1,0 +1,1098 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using FGMC.TPO.DTO;
+using FGMC.TPO.Manager.Contract;
+using FGMC.TPO.Repository.Contract.Repositories;
+using Moq;
+using Tavant.CL.Mismo34Model;
+using Xunit;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Tavant.CL.Mismo34Enums;
+
+namespace FGMC.TPO.Manager.Test
+{
+    public class BorrowerManagerTest
+    {
+        private BorrowerManager _borrowerManager;
+        private readonly Mock<IStagingRepository> _mockStagingRepository;
+        private readonly Mock<IPartyRepository> _mockPartyRepository;
+        private readonly Mock<IBorrowerServiceRepository> _mockBorrowerServiceRepository;
+        private readonly Mock<IPropertyRepository> _mockPropertyRepository;
+        private readonly Mock<ICacheRepository> _mockCacheRepository;
+        private readonly Mock<ILoanRepository> _mockLoanRepository;
+        private readonly Mock<IAuditLogRepository> _mockAuditLogRepository;
+        private readonly Mock<IDataMartRepository> _mockDataMartRepository;
+        private readonly Mock<IOptions<CustomRedisCache>> _mockCustomRedisCache;
+        private readonly Mock<IFeeRepository> _mockFeeRepository;
+        private readonly Mock<ITitleManager> _mockTitleManager;
+        private readonly Mock<ILoanEligibilityManager> _mockLoanEligibilityManager;
+        private readonly Mock<ILogger<BorrowerManager>> _mockLogger = new Mock<ILogger<BorrowerManager>>();
+        private readonly Mock<IDealRepository> _mockDealRepository;
+
+        public BorrowerManagerTest()
+        {
+            _mockStagingRepository = new Mock<IStagingRepository>();
+            _mockPartyRepository = new Mock<IPartyRepository>();
+            _mockBorrowerServiceRepository = new Mock<IBorrowerServiceRepository>();
+            _mockPropertyRepository = new Mock<IPropertyRepository>();
+            _mockCacheRepository = new Mock<ICacheRepository>();
+            _mockLoanRepository = new Mock<ILoanRepository>();
+            _mockAuditLogRepository = new Mock<IAuditLogRepository>();
+            _mockDataMartRepository = new Mock<IDataMartRepository>();
+            _mockCustomRedisCache = new Mock<IOptions<CustomRedisCache>>();
+            _mockFeeRepository = new Mock<IFeeRepository>();
+            _mockTitleManager = new Mock<ITitleManager>();
+            _mockLoanEligibilityManager = new Mock<ILoanEligibilityManager>();
+            _mockDealRepository = new Mock<IDealRepository>();
+            _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_LoanRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(null, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_StagingRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, null, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_PropertyRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, null, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_CacheRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, null, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_AuditLogRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, null, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_DataMartRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, null, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_CustomRedishCacheRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, null, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_FeeRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, null, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_TitleManager_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, null, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_LoanEligibilityManager_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, null, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+        [Fact]
+        public void BorrowerManager_Constructor_PartyRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, null, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_BorrowerRepo_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, null, _mockLogger.Object, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_Logger_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, null, _mockDealRepository.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+
+
+        [Fact]
+        public void BorrowerManager_Constructor_Params_Null_Test()
+        {
+            try
+            {
+                _borrowerManager = new BorrowerManager(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowerManager_Constructor_Params_Valid_Test()
+        {
+            _borrowerManager = new BorrowerManager(_mockLoanRepository.Object, _mockStagingRepository.Object, _mockPropertyRepository.Object, _mockCacheRepository.Object, _mockAuditLogRepository.Object, _mockDataMartRepository.Object, _mockCustomRedisCache.Object, _mockFeeRepository.Object, _mockTitleManager.Object, _mockLoanEligibilityManager.Object, _mockPartyRepository.Object, _mockBorrowerServiceRepository.Object, _mockLogger.Object, _mockDealRepository.Object);
+            Assert.NotNull(_borrowerManager);
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_Userinfo_Null_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.GetBorrowersAsync(default(UserInformation));
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_UniqueSessionKey_Null_Test()
+        {
+            try
+            {
+                UserInformation userInfo = new UserInformation();
+                var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_UserSession_Null_Test()
+        {
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(default(ApplicationSessionDto));
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_UserSession_DealId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = String.Empty,
+                    PartiesId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PropertyId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                    LoanNumber = "17083025"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_UserSession_PartiesId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = String.Empty,
+                    PropertyId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                    LoanNumber = "17083025"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_UserSession_PropertyId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                    PropertyId = String.Empty,
+                    LoanNumber = "17083025"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_UserSession_LoanNumber_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                    PropertyId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    LoanNumber = String.Empty
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_Parties_Default_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                PropertyId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                LoanNumber = "17083025"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetPartiesAsync(It.IsAny<Guid>())).ReturnsAsync(default(IReadOnlyList<Party>));
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_Parties_Null_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                PropertyId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                LoanNumber = "17083025"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetPartiesAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Party>());
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_Borrowers_Null_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                PropertyId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                LoanNumber = "17083025"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetPartiesAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Party> { new Party() });
+            _mockStagingRepository.Setup(x => x.GetApplicationDealByDealIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationDealDto { BorrowerDetail = new BorrowerDetailDto[1] });
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            Assert.False(result.Borrowers.Any());
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_Borrowers_Valid_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                PropertyId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                LoanNumber = "17083025"
+            };
+            Role role = new Role
+            {
+                RoleDetail = new RoleDetail
+                {
+                    PartyRoleType = PartyRole.Borrower
+                }
+            };
+            Roles roles = new Roles
+            {
+                Role = new Role[1] { role },
+            };
+            Party party = new Party
+            {
+                Roles = roles,
+                SequenceNumber = 1,
+                Id = new Guid("4ad07523-8d3a-49ef-8b96-f02af48f4886")
+            };
+            Address address = new Address
+            {
+                StreetName = "5th block",
+                CityName = "Bangalore",
+                PostalCode = "54589254",
+                StateCode = "25"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetPartiesAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Party> { party });
+            _mockPropertyRepository.Setup(x => x.GetAddressByParentElementIdAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Address> { address });
+            _mockStagingRepository.Setup(x => x.GetApplicationDealByDealIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationDealDto { BorrowerDetail = new BorrowerDetailDto[1] { new BorrowerDetailDto { BorrowerId = "4ad07523-8d3a-49ef-8b96-f02af48f4886" } } });
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetBorrowersAsync(userInfo);
+            Assert.True(result.Borrowers.Any());
+        }
+
+        [Fact]
+        public async void GetAsync_BorrowerId_Null_Test()
+        {
+            try
+            {
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetAsync(Guid.Empty, userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_Userinfo_Null_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), default(UserInformation));
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_AllParams_Null_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.GetAsync(Guid.Empty, default(UserInformation));
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_UniqueSessionKey_Null_Test()
+        {
+            try
+            {
+                UserInformation userInfo = new UserInformation();
+                var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_UserSession_Null_Test()
+        {
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(default(ApplicationSessionDto));
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void GetAsync_UserSession_DealId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = String.Empty,
+                    PartiesId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    DataMartObjectId = "17083025"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_UserSession_PartiesId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = String.Empty,
+                    DataMartObjectId = "17083025"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_UserSession_DataMartObjectId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                    DataMartObjectId = String.Empty
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAsync_Parties_Null_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(default(Party));
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void GetAsync_Valid_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async void GetAsync_ApplicationDeal_BorrowerDetail_NotNull_Test() //san
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            ApplicationDealDto appDealDto = new ApplicationDealDto();
+            {
+                appDealDto.BorrowerDetail = new BorrowerDetailDto[1]
+                {
+                    new BorrowerDetailDto {BorrowerId = new Guid().ToString()}
+                };
+            }
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockStagingRepository.Setup(x => x.GetApplicationDealByDealIdAsync(appSessionDto.DealId))
+                .ReturnsAsync(appDealDto);
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.GetAsync(new Guid("b78d5610-b259-4268-ab02-6c17fc80d809"), userInfo);
+            Assert.NotNull(result);
+        }
+        [Fact]
+        public async void GetAutoCompleteAddressesAsync_ParentElementIds_Null_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.GetAutoCompleteAddressesAsync(null);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAutoCompleteAddressesAsync_ParentElementIds_Default_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.GetAutoCompleteAddressesAsync(new List<Guid>());
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void GetAutoCompleteAddressesAsync_Address_Null_Test()
+        {
+            var result = await _borrowerManager.GetAutoCompleteAddressesAsync(new List<Guid> { new Guid("4ad07523-8d3a-49ef-8b96-f02af48f4886") });
+            Assert.False(result.Any());
+        }
+
+        [Fact]
+        public async void GetAutoCompleteAddressesAsync_Valid_Test()
+        {
+            Address address = new Address
+            {
+                AddressLineText = "#77",
+                StreetName = "5th Block Koramangala",
+                CityName = "Bangalore",
+                StateCode = "560096"
+            };
+            _mockPropertyRepository.Setup(x => x.GetAddressByParentElementIdAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Address> { address });
+            var result = await _borrowerManager.GetAutoCompleteAddressesAsync(new List<Guid> { new Guid("4ad07523-8d3a-49ef-8b96-f02af48f4886") });
+            Assert.True(result.Any());
+        }
+
+        [Fact]
+        public async void UpdateAsync_BorrowerInfo_Null_Test()
+        {
+            try
+            {
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.UpdateAsync(default(BorrowerDto), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_Userinfo_Null_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), default(UserInformation));
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_AllParams_Null_Test()
+        {
+            try
+            {
+                var result = await _borrowerManager.UpdateAsync(default(BorrowerDto), default(UserInformation));
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_UniqueSessionKey_Null_Test()
+        {
+            try
+            {
+                UserInformation userInfo = new UserInformation();
+                var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_UserSession_Null_Test()
+        {
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(default(ApplicationSessionDto));
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_UserSession_DealId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = String.Empty,
+                    PartiesId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    DataMartObjectId = "789465256"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_UserSession_PartiesId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = String.Empty,
+                    DataMartObjectId = "789465256"
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_UserSession_DataMartObjectId_Invalid_Test()
+        {
+            try
+            {
+                ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+                {
+                    DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                    PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                    DataMartObjectId = String.Empty
+                };
+                _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+                UserInformation userInfo = new UserInformation
+                {
+                    UniqueSessionKey = "Test"
+                };
+                var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<FormatException>(ex);
+            }
+        }
+
+        [Fact]
+        public async void UpdateAsync_Parties_Null_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(default(Party));
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_UpdateBorrower_False_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(appSessionDto);
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockBorrowerServiceRepository.Setup(x => x.GetAllBorrowers(It.IsAny<Guid>()))
+                .ReturnsAsync(new List<Borrower>());
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_UpdateBorrower_True_ApplicationDeal_Null_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test",
+                CorrelationId = "485252",
+                UserLoginId = "455465"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(userInfo.UniqueSessionKey)).ReturnsAsync(appSessionDto);
+            _mockCacheRepository.Setup(x => x.GetAsync(Constants.AuditFieldDto)).ReturnsAsync(new List<ScreenFieldsDto>());
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockPartyRepository.Setup(x => x.UpdateAsync(It.IsAny<Party>())).ReturnsAsync(true);
+
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_UpdateBorrower_True_ApplicationDeal_IsBorrowerValid_False_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test",
+                CorrelationId = "485252",
+                UserLoginId = "455465"
+            };
+            BorrowerDetailDto borrowerDto = new BorrowerDetailDto
+            {
+                BorrowerId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                IsBorrowerValid = false
+            };
+            Party objParty = new Party();
+            {
+                objParty.Roles = new Roles()
+                {
+                    Role = new Role[1]
+                    {
+                        new Role()
+                        {
+                            RoleDetail = new RoleDetail()
+                            {
+                                Id = Guid.NewGuid(),
+                                PartyRoleType = PartyRole.Borrower
+                            }
+                        }
+                    }
+                };
+            }
+            _mockCacheRepository.Setup(x => x.GetAsync(userInfo.UniqueSessionKey)).ReturnsAsync(appSessionDto);
+            _mockCacheRepository.Setup(x => x.GetAsync(Constants.AuditFieldDto)).ReturnsAsync(new List<ScreenFieldsDto>());
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(objParty);
+            _mockPartyRepository.Setup(x => x.UpdateAsync(It.IsAny<Party>())).ReturnsAsync(true);
+            _mockBorrowerServiceRepository.Setup(x => x.GetAllBorrowers(It.IsAny<Guid>()))
+                .ReturnsAsync(new List<Borrower>(new Borrower[1] { new Borrower() }));
+            _mockStagingRepository.Setup(x => x.GetApplicationDealByDealIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationDealDto { BorrowerDetail = new BorrowerDetailDto[1] { borrowerDto }, TabStatus = new TabStatusDto() });
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto() { GrossMonthlyIncome = 10000 }, userInfo);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_UpdateBorrower_True_ApplicationDeal_IsBorrowerValid_True_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test",
+                CorrelationId = "485252",
+                UserLoginId = "455465"
+            };
+            BorrowerDetailDto borrowerDto = new BorrowerDetailDto
+            {
+                BorrowerId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                IsBorrowerValid = true,
+                IsGrossIncomeAvailable = true
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(userInfo.UniqueSessionKey)).ReturnsAsync(appSessionDto);
+            _mockCacheRepository.Setup(x => x.GetAsync(Constants.AuditFieldDto)).ReturnsAsync(new List<ScreenFieldsDto>());
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockPartyRepository.Setup(x => x.UpdateAsync(It.IsAny<Party>())).ReturnsAsync(true);
+            _mockStagingRepository.Setup(x => x.GetApplicationDealByDealIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationDealDto { BorrowerDetail = new BorrowerDetailDto[1] { borrowerDto }, TabStatus = new TabStatusDto() });
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_IsPrimaryBorrower_False_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test",
+                CorrelationId = "485252",
+                UserLoginId = "455465"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(userInfo.UniqueSessionKey)).ReturnsAsync(appSessionDto);
+            _mockCacheRepository.Setup(x => x.GetAsync(Constants.AuditFieldDto)).ReturnsAsync(new List<ScreenFieldsDto>());
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockPartyRepository.Setup(x => x.UpdateAsync(It.IsAny<Party>())).ReturnsAsync(true);
+
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto(), userInfo);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_IsPrimaryBorrower_True_DealHeader_Null_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test",
+                CorrelationId = "485252",
+                UserLoginId = "455465"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(userInfo.UniqueSessionKey)).ReturnsAsync(appSessionDto);
+            _mockCacheRepository.Setup(x => x.GetAsync(Constants.AuditFieldDto)).ReturnsAsync(new List<ScreenFieldsDto>());
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockPartyRepository.Setup(x => x.UpdateAsync(It.IsAny<Party>())).ReturnsAsync(true);
+
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto { IsPrimaryBorrower = true }, userInfo);
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async void UpdateAsync_IsPrimaryBorrower_True_DealHeader_Valid_Test()
+        {
+            ApplicationSessionDto appSessionDto = new ApplicationSessionDto
+            {
+                DealId = "4ad07523-8d3a-49ef-8b96-f02af48f4886",
+                PartiesId = "b78d5610-b259-4268-ab02-6c17fc80d809",
+                DataMartObjectId = "17083025"
+            };
+            UserInformation userInfo = new UserInformation
+            {
+                UniqueSessionKey = "Test",
+                CorrelationId = "485252",
+                UserLoginId = "455465"
+            };
+            _mockCacheRepository.Setup(x => x.GetAsync(userInfo.UniqueSessionKey)).ReturnsAsync(appSessionDto);
+            _mockCacheRepository.Setup(x => x.GetAsync(Constants.AuditFieldDto)).ReturnsAsync(new List<ScreenFieldsDto>());
+            _mockPartyRepository.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(new Party());
+            _mockPartyRepository.Setup(x => x.UpdateAsync(It.IsAny<Party>())).ReturnsAsync(true);
+            _mockStagingRepository.Setup(x => x.GetDealHeaderByDataMartObjectIdAsync(It.IsAny<string>())).ReturnsAsync(new DealHeaderDto());
+
+            var result = await _borrowerManager.UpdateAsync(new BorrowerDto { IsPrimaryBorrower = true }, userInfo);
+            Assert.NotNull(result);
+        }
+    }
+}
