@@ -1,0 +1,200 @@
+using System;
+using System.Collections.Generic;
+using FGMC.TPO.API.Controllers;
+using FGMC.TPO.DTO;
+using FGMC.TPO.Manager.Contract;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using Xunit;
+using Microsoft.Extensions.Logging;
+
+namespace FGMC.TPO.API.Test
+{
+    public class BorrowersControllerTest
+    {
+        private BorrowersController _borrowController;
+        private readonly Mock<IBorrowerManager> _mockBorrowerManager;
+        private readonly Mock<ILogger<BorrowersController>> _mocklogger;
+
+        public BorrowersControllerTest()
+        {
+            _mockBorrowerManager = new Mock<IBorrowerManager>();
+            _mocklogger = new Mock<ILogger<BorrowersController>>();
+            _borrowController = new BorrowersController(_mockBorrowerManager.Object, _mocklogger.Object);
+        }
+
+        [Fact]
+        public void BorrowersController_Constructor_Null_Test()
+        {
+            try
+            {
+                _borrowController = new BorrowersController(null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+        [Fact]
+        public void BorrowersController_Constructor_Logger_Null_Test()
+        {
+            try
+            {
+                _borrowController = new BorrowersController(_mockBorrowerManager.Object, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+        [Fact]
+        public void BorrowersController_Constructor_BorrowerManager_Null_Test()
+        {
+            try
+            {
+                _borrowController = new BorrowersController(null, _mocklogger.Object);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Fact]
+        public void BorrowersController_Constructor_Valid_Test()
+        {
+            _borrowController = new BorrowersController(_mockBorrowerManager.Object, _mocklogger.Object);
+            Assert.NotNull(_borrowController);
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_NullArgument_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.GetBorrowersAsync(It.IsAny<UserInformation>())).ReturnsAsync(default(LoanBorrowersDto));
+            var result = await _borrowController.GetBorrowersAsync();
+            Assert.IsType<NotFoundObjectResult>(result);
+            Assert.True(((NotFoundObjectResult)result)?.StatusCode.Equals(404));
+        }
+
+        [Fact]
+        public async void GetAsync_Valid_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.GetBorrowersAsync(It.IsAny<UserInformation>())).ReturnsAsync(new LoanBorrowersDto());
+            var result = await _borrowController.GetBorrowersAsync();
+            Assert.IsType<OkObjectResult>(result);
+            Assert.True(((OkObjectResult)result)?.StatusCode.Equals(200));
+        }
+
+        [Fact]
+        public async void GetBorrowersAsync_Guid_Null_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<UserInformation>())).ReturnsAsync(default(BorrowerDto));
+            var result = await _borrowController.GetAsync(Guid.Empty);
+            Assert.IsType<BadRequestResult>(result);
+            Assert.True(((BadRequestResult)(result))?.StatusCode.Equals(400));
+
+        }
+        [Fact]
+        public async void GetAsync_ResponseNull_Test()
+        {
+            _mockBorrowerManager.Setup(x
+                => x.GetAsync(It.IsAny<Guid>(), It.IsAny<UserInformation>()))
+                .ReturnsAsync(default(BorrowerDto));
+            Guid _guid = Guid.Parse("cb068ab2-56e7-4a53-a6cd-50c03337d027");
+            var result = await _borrowController.GetAsync(_guid);
+            Assert.IsType<NotFoundObjectResult>(result);
+            Assert.True(((NotFoundObjectResult)(result))?.StatusCode.Equals(404));
+        }
+        [Fact]
+        public async void GetAsync_ValidRespone_Test()
+        {
+            _mockBorrowerManager.Setup(x
+                    => x.GetAsync(It.IsAny<Guid>(), It.IsAny<UserInformation>()))
+                .ReturnsAsync(new BorrowerDto());
+            Guid _guid = Guid.Parse("cb068ab2-56e7-4a53-a6cd-50c03337d027");
+            var result = await _borrowController.GetAsync(_guid);
+            Assert.True(((OkObjectResult)(result))?.StatusCode.Equals(200));
+        }
+        [Fact]
+        public async void UpdateAsync_Borrower_Null_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.UpdateAsync(It.IsAny<BorrowerDto>(),
+                It.IsAny<UserInformation>())).ReturnsAsync(default(BorrowerDto));
+            var result = await _borrowController.UpdateAsync(default(BorrowerDto));
+            Assert.IsType<BadRequestResult>(result);
+            Assert.True(((BadRequestResult)result)?.StatusCode.Equals(400));
+        }
+        [Fact]
+        public async void UpdateAsync_Valid_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.UpdateAsync(It.IsAny<BorrowerDto>(),
+                It.IsAny<UserInformation>())).ReturnsAsync(new BorrowerDto());
+            BorrowerDto _borrowerInfo = new BorrowerDto();
+            var result = await _borrowController.UpdateAsync(_borrowerInfo);
+            Assert.IsType<OkObjectResult>(result);
+            Assert.True(((OkObjectResult)result)?.StatusCode.Equals(200));
+        }
+
+        [Fact]
+        public async void UpdateAsync_BorrowerDtoNull_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.UpdateAsync(It.IsAny<BorrowerDto>(),
+                It.IsAny<UserInformation>())).ReturnsAsync(default(BorrowerDto));
+            var result = await _borrowController.UpdateAsync(default(BorrowerDto));
+            Assert.IsType<BadRequestResult>(result);
+            Assert.True(((BadRequestResult)result)?.StatusCode.Equals(400));
+        }
+
+        [Fact]
+        public async void UpdateAsync_ResponseNull_Test()
+        {
+            _mockBorrowerManager.Setup(x => x.UpdateAsync(It.IsAny<BorrowerDto>(),
+                It.IsAny<UserInformation>())).ReturnsAsync(default(BorrowerDto));
+            var result = await _borrowController.UpdateAsync(new BorrowerDto());
+            Assert.True(((NotFoundObjectResult)result)?.StatusCode.Equals(404));
+        }
+        [Fact]
+        public async void GetAddressesAsync_Null_Test()
+        {
+
+            _mockBorrowerManager.Setup(x => x.GetAutoCompleteAddressesAsync(It.IsAny<List<Guid>>()))
+                .ReturnsAsync(default(List<AddressDto>));
+            List<Guid> _lstGuid = new List<Guid>();
+            var result = await _borrowController.GetAddressesAsync(_lstGuid);
+            Assert.IsType<BadRequestResult>(result);
+            Assert.True(((BadRequestResult)(result))?.StatusCode.Equals(400));
+        }
+        [Fact]
+        public async void GetAddressesAsync_Response_Null_Test()
+        {
+
+
+            _mockBorrowerManager.Setup(x => x.GetAutoCompleteAddressesAsync(It.IsAny<List<Guid>>())).ReturnsAsync(default(List<AddressDto>));
+            List<Guid> _lstGuid = new List<Guid>
+            {
+                 Guid.Parse("cb068ab2-56e7-4a53-a6cd-50c03337d027"),
+                 Guid.Parse("ca19a810-3bdc-45d6-8dfc-4e4eab838e72")
+            };
+
+            var result = await _borrowController.GetAddressesAsync(_lstGuid);
+            Assert.IsType<NotFoundObjectResult>(result);
+            Assert.True(((NotFoundObjectResult)result)?.StatusCode.Equals(404));
+        }
+        [Fact]
+        public async void GetAddressesAsync_Valid_Test()
+        {
+
+            List<AddressDto> addressList = new List<AddressDto>() { new AddressDto { Address = "JP Nagar", City = "Benguluru", State = "Karnataka", Zip = "5546456" } };
+            _mockBorrowerManager.Setup(x => x.GetAutoCompleteAddressesAsync(It.IsAny<List<Guid>>())).ReturnsAsync(addressList);
+            List<Guid> _lstGuid = new List<Guid>
+            {
+                 Guid.Parse("cb068ab2-56e7-4a53-a6cd-50c03337d027"),
+                 Guid.Parse("ca19a810-3bdc-45d6-8dfc-4e4eab838e72")
+            };
+
+            var result = await _borrowController.GetAddressesAsync(_lstGuid);
+            Assert.IsType<OkObjectResult>(result);
+            Assert.True(((OkObjectResult)(result))?.StatusCode.Equals(200));
+        }
+    }
+}
