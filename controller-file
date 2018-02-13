@@ -1,0 +1,156 @@
+using System;
+using System.Threading.Tasks;
+using FGMC.TPO.DTO;
+using FGMC.TPO.Manager.Contract;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using FGMC.TPO.DTO.Infrastructure;
+using Microsoft.Extensions.Logging;
+
+namespace FGMC.TPO.API.Controllers
+{
+	/// <summary>
+	///     Loan related methods are all handled by this controller.
+	/// </summary>
+	[ApiVersion("1.0")]
+	[Authorize(ActiveAuthenticationSchemes = AuthScheme)]
+	[Route("api/v{version:apiVersion}/[controller]")]
+	[ProducesResponseType(typeof(string), 400)]
+	[ProducesResponseType(typeof(string), 404)]
+	[ProducesResponseType(typeof(string), 500)]
+	public class LoansController : BaseController
+	{
+		#region Private Variables and Constructor
+
+		/// <summary>
+		///     Get instance of <see cref="ILoanManager"/>.
+		/// </summary>
+		private readonly ILoanManager _loanManager;
+
+		/// <summary>
+		///     Gets the instance of <see cref="ILogger" />.
+		/// </summary>
+		private readonly ILogger _logger;
+
+		/// <summary>
+		///     Initializes new instance of <see cref="LoansController"/> class.
+		/// </summary>
+		/// <param name="loanManager"><see cref="ILoanManager" /> Instance of the loan info manager.</param>
+		/// <param name="logger"><see cref="ILogger{LoanController}"/>Instance of logger.</param>
+		public LoansController(ILoanManager loanManager, ILogger<LoansController> logger)
+		{
+			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+			_loanManager = loanManager ?? throw new ArgumentNullException(nameof(loanManager));
+		}
+
+		#endregion
+
+		#region Public Methods
+
+		/// <summary>
+		///     Get Loan information by loanId.
+		/// </summary>
+		/// <returns>Returns loan information<see cref="LoanDto"/>.</returns>
+		[HttpGet]
+		[ProducesResponseType(typeof(LoanDto), 200)]
+		public async Task<IActionResult> GetAsync()
+		{
+			_logger.LogInformation(LoggingEvents.GetItem, "GetAsync()");
+			var response = await _loanManager.GetAsync(UserInfo).ConfigureAwait(false);
+			if (response == null)
+			{
+				_logger.LogWarning(LoggingEvents.GetItemNotfound, "GetAsync() NOT FOUND");
+				return NotFound(null);
+			}
+			return Ok(response);
+		}
+
+		/// <summary>
+		///     Updates loan data
+		/// </summary>
+		/// <param name="loanInfoDto"><see cref="LoanDto" /> Instance of loan info update DTO.</param>
+		/// <returns>Returns loan information<see cref="LoanDto"/>.</returns>
+		[HttpPut]
+		[ProducesResponseType(typeof(LoanDto), 200)]
+		public async Task<IActionResult> UpdateAsync([FromBody] LoanDto loanInfoDto)
+		{
+			if (loanInfoDto == default(LoanDto))
+			{
+				return BadRequest();
+			}
+			_logger.LogInformation(LoggingEvents.UpdateItem, "UpdateAsync()");
+			var response = await _loanManager.UpdateAsync(loanInfoDto, UserInfo).ConfigureAwait(false);
+			if (response == null)
+			{
+				_logger.LogWarning(LoggingEvents.UpdateItemsUnsuccessful, "UpdateAsync() NOT FOUND");
+				return NotFound(null);
+			}
+			return Ok(response);
+		}
+
+		/// <summary>
+		///     Updates Staged data after Mi Refresh
+		/// </summary>
+		/// <param name="loanInfoDto"><see cref="LoanDto" /> Instance of loan info update DTO.</param>
+		/// <returns>Returns loan information<see cref="LoanDto"/>.</returns>
+		[HttpPut("mi")]
+		[ProducesResponseType(typeof(LoanDto), 200)]
+		public async Task<IActionResult> UpdateMiDataAsync([FromBody] LoanDto loanInfoDto)
+		{
+			if (loanInfoDto == default(LoanDto))
+			{
+				return BadRequest();
+			}
+			_logger.LogInformation(LoggingEvents.UpdateItem, "UpdateMIDataAsync()");
+			var response = await _loanManager.UpdateMiDataAsync(loanInfoDto, UserInfo).ConfigureAwait(false);
+			if (response == null)
+			{
+				_logger.LogWarning(LoggingEvents.UpdateItemsUnsuccessful, "UpdateMIDataAsync() NOT FOUND");
+				return NotFound(null);
+			}
+			return Ok(response);
+		}
+
+		/// <summary>
+		///     This method starts the submission process of the loan.
+		/// <param name="isSuperAdmin"><see cref="bool" /> Indicates whether logged-in user is SuperAdmin or not.</param>
+		/// </summary>
+		[HttpPut]
+		[ProducesResponseType(typeof(bool), 200)]
+		[Route("submit/{isSuperAdmin}")]
+		public async Task<IActionResult> SubmitLoanAsync(bool isSuperAdmin)
+		{
+			if (Request == null || Convert.ToString(Request.Headers["Authorization"]) == null)
+			{
+				return BadRequest();
+			}
+			_logger.LogInformation(LoggingEvents.UpdateItem, "SubmitLoanAsync()");
+			var response = await _loanManager
+				.SubmitLoanAsync(isSuperAdmin, Convert.ToString(Request.Headers["Authorization"]), UserInfo).ConfigureAwait(false);
+            if (response == false)
+                return NotFound(null);
+            return Ok(true);
+		}
+
+        /// <summary>
+        ///     Gets PDF Byte array for Loan Estimate.
+        /// </summary>
+        /// <returns>byte[]</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(FileContentResult), 200)]
+        [Route("loanEstimate")]
+        public async Task<FileResult> GetLoanEstimateAsync() 
+        {
+            _logger.LogInformation(LoggingEvents.GetItem,
+                "Loan Estimate Byte: Getting Loan estimate byte array for Pdf generation.");
+            var result = await _loanManager.GetLoanEstimateAsync(UserInfo);
+            /*Approach 1 :build the LE model string and pass to utility End*/
+            HttpContext.Response.ContentType = "application/pdf";
+            FileContentResult fileResult = new FileContentResult(result.Item1, "application/pdf");           
+
+            return fileResult;
+        }
+
+        #endregion
+    }
+}
