@@ -1,0 +1,132 @@
+using AutoMapper;
+using FGMC.TPO.API.Infrastructure;
+using FGMC.TPO.DTO;
+using FGMC.TPO.DTO.Infrastructure;
+using FGMC.Utilities.Configuration;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Serialization;
+using Swashbuckle.Swagger.Model;
+using System.IO;
+using FGMC.Utilities.ExceptionHandling;
+using NLog.Extensions.Logging;
+
+namespace FGMC.TPO.API
+{
+    public class Startup
+    {
+        // This method gets called by the runtime. Use this method to add services to the container
+        public Startup(IHostingEnvironment env)
+        {
+            string pathForSettings =
+                $"{env.ContentRootPath}{Path.DirectorySeparatorChar}Configuration{Path.DirectorySeparatorChar}{"BasicSettings." + env.EnvironmentName + ".json"}";
+
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("appsettings.json", true, true)
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true)
+                .AddJsonFile(pathForSettings, false, true)
+                .AddEnvironmentVariables();
+
+            Configuration = builder.Build();
+        }
+
+        public IConfigurationRoot Configuration { get; }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            var corsBuilder = new CorsPolicyBuilder();
+
+            corsBuilder.AllowAnyHeader();
+            corsBuilder.AllowAnyMethod();
+            corsBuilder.WithOrigins("*");
+            corsBuilder.AllowCredentials();
+            services.AddCors(options => { options.AddPolicy("AllowAll", corsBuilder.Build()); });
+            services.AddMvc()
+                .AddJsonOptions(
+                    a => a.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver());
+			services.Configure<CustomRedisCache>(options =>
+			{
+				options.MasterDataExpirationTime = Configuration.GetSection("customrediscache:masterdataexpiryinminutes").Value;
+				
+			});
+            services.Configure<BorrowerService>(Configuration.GetSection("borrowerserviceurl"));
+            services.Configure<StagingServiceConfiguration>(Configuration.GetSection("stagingserviceurl"));
+            services.Configure<AuditServiceConfiguration>(Configuration.GetSection("auditserviceurl"));
+            services.Configure<UtilityServiceConfiguration>(Configuration.GetSection("utilityserviceurl"));
+            services.Configure<BusinessCoreService>(Configuration.GetSection("businesscoreserviceurl"));
+            services.Configure<LoanService>(Configuration.GetSection("loanserviceurl"));
+            services.Configure<TitleService>(Configuration.GetSection("titleserviceurl"));
+            services.Configure<DataMartServiceConfiguration>(Configuration.GetSection("datamartserviceurl"));
+            services.Configure<FeeService>(Configuration.GetSection("feeserviceurl"));
+            services.Configure<CommonService>(Configuration.GetSection("commonserviceurl"));
+            services.Configure<RedisCache>(Configuration.GetSection("rediscache"));
+			services.Configure<CustomRedisCache>(Configuration.GetSection("customrediscache"));
+			services.Configure<DataMigrationService>(Configuration.GetSection("datamigrationserviceurl"));
+            services.Configure<NotificationService>(Configuration.GetSection("Notificationserviceurl"));
+            services.Configure<EmailDto>(Configuration.GetSection("brokercompensationemail"));
+            services.Configure<BonafideDiscountDto>(Configuration.GetSection("compliancecheckBonafideDiscount"));
+            services.AddOptions();
+
+            //import dependancy injection
+            DependancyBuilder.BuildDependencies(services);
+            services.AddAuthorization();
+            services.AddApiVersioning();
+
+            // Automapper Configuration
+            services.AddAutoMapper();
+            
+			// Inject an implementation of ISwaggerProvider with defaulted settings applied
+            services.AddSwaggerGen();
+            services.ConfigureSwaggerGen(a =>
+            {
+                a.DescribeAllEnumsAsStrings();
+                a.AddSecurityDefinition("Bearer", new ApiKeyScheme
+                {
+                    Description =
+                        "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = "header",
+                    Type = "apiKey"
+                });
+                a.OperationFilter<SecurityRequirementsOperationFilter>();
+            });
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        {
+            app.UseCors("AllowAll");
+
+            var idServerSetting =
+                Configuration.GetSection("ApplicationSetting");
+
+            app.UseIdentityServerAuthentication(new IdentityServerAuthenticationOptions
+            {
+                Authority = idServerSetting.GetValue<string>("Authority"),
+                RequireHttpsMetadata = idServerSetting.GetValue<bool>("RequireHttpsMetadata"),
+                ApiName = idServerSetting.GetValue<string>("ScopeName"),
+                AutomaticChallenge = true
+            });
+            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+            loggerFactory.AddDebug();
+            loggerFactory.AddNLog();
+            string configPath =
+                $"{env.ContentRootPath}{Path.DirectorySeparatorChar}Configuration{Path.DirectorySeparatorChar}nlog.{env.EnvironmentName}.config";
+            app.UseExceptionHandling();
+            env.ConfigureNLog(configPath);
+            app.UseResponseBuffering();
+            app.UseMvc();
+
+            // Enable middleware to serve generated Swagger as a JSON endpoint
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui assets (HTML, JS, CSS etc.)
+            app.UseSwaggerUi();
+        }
+    }
+}
